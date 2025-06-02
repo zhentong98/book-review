@@ -7,25 +7,6 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Query\Builder as QueryBuilder;
 
-
-/**
- *
- *
- * @property int $id
- * @property string $title
- * @property string $author
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Book newModelQuery()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Book newQuery()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Book query()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Book whereAuthor($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Book whereCreatedAt($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Book whereId($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Book whereTitle($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Book whereUpdatedAt($value)
- * @mixin \Eloquent
- */
 class Book extends Model
 {
     use HasFactory;
@@ -35,9 +16,9 @@ class Book extends Model
         return $this->hasMany(Review::class);
     }
 
-    public function scopeTitle(Builder $query): Builder
+    public function scopeTitle(Builder $query, string $title): Builder
     {
-        return $query->where('title', 'LIKE', '%' . request('title') . '%');
+        return $query->where('title', 'LIKE', '%' . $title . '%');
     }
 
     public function scopePopular(Builder $query, $from = null, $to = null): Builder|QueryBuilder
@@ -70,5 +51,33 @@ class Book extends Model
         } elseif ($from && $to) {
             $query->whereBetween('created_at', [$from, $to]);
         }
+    }
+
+    public function scopePopularLastMonth(Builder $query): Builder|QueryBuilder
+    {
+        return $query->popular(now()->subMonth(), now())
+            ->highestRated(now()->subMonth(), now())
+            ->minReviews(2);
+    }
+
+    public function scopePopularLast6Months(Builder $query): Builder|QueryBuilder
+    {
+        return $query->popular(now()->subMonths(6), now())
+            ->highestRated(now()->subMonths(6), now())
+            ->minReviews(5);
+    }
+
+    public function scopeHighestRatedLastMonth(Builder $query): Builder|QueryBuilder
+    {
+        return $query->highestRated(now()->subMonth(), now())
+            ->popular(now()->subMonth(), now())
+            ->minReviews(2);
+    }
+
+    public function scopeHighestRatedLast6Months(Builder $query): Builder|QueryBuilder
+    {
+        return $query->highestRated(now()->subMonths(6), now())
+            ->popular(now()->subMonths(6), now())
+            ->minReviews(5);
     }
 }
